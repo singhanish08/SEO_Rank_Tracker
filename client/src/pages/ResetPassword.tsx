@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Lock, Loader2, Eye, EyeOff, CheckCircle2, ChartNoAxesColumnIcon } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const { resetPassword } = useApp();
 
     const token = searchParams.get("token") || "";
