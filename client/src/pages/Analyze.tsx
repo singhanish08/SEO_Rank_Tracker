@@ -106,7 +106,7 @@ export default function Analyze() {
     }, []);
 
     return (
-        <div className="min-h-screen pt-16 md:pt-24 bg-background">
+        <div className="min-h-screen bg-background">
             <div className="max-w-3xl mx-auto px-4 py-12">
                 {!analyzing ? (
                     <div>
