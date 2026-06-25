@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema({
     plan: {type: String, enum: ["free", "pro"], default: "free"},
     analysisCount: {type: Number, default: 0},
     lastAnalysisDate: {type: Date, default: null},
+    emailVerified: {type: Boolean, default: false},
+    verificationToken: {type: String},
+    verificationExpires: {type: Date},
+    resetPasswordToken: {type: String},
+    resetPasswordExpires: {type: Date},
 }, {timestamps: true});
 
 const User = mongoose.model("User", userSchema);

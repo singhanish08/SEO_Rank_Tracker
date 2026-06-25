@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, Loader2, ChartNoAxesColumnIcon, User2Icon } from "lucide-react";
+import {
+    Mail,
+    Lock,
+    Loader2,
+    ChartNoAxesColumnIcon,
+    User2Icon,
+} from "lucide-react";
 import { useApp } from "../context/AppContext";
 import toast from "react-hot-toast";
 
@@ -10,55 +16,87 @@ export default function Login({ state }: { state: string }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+
     const { login, register } = useApp();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.SubmitEvent) => {
+    useEffect(() => {
+        setName("");
+        setEmail("");
+        setPassword("");
+        setLoading(false);
+    }, [isLoginState]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         let result;
+
         if (isLoginState) {
             result = await login(email, password);
         } else {
             result = await register(name, email, password);
         }
 
-        if(result.success){
-            const redirect = searchParams.get("redirect") || "/dashboard"
-            navigate(redirect)
+        if (result.success) {
+            const redirect = searchParams.get("redirect") || "/dashboard";
+            navigate(redirect);
+        } else {
+            toast.error(result.message || "Login failed");
         }
-        else{
-            toast.error(result.message || 'Login failed');
-        }
+
         setLoading(false);
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <div className="w-full max-w-md">
+
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link to="/" className="flex items-center justify-center gap-2 group mb-10">
+                    <Link
+                        to="/"
+                        className="flex items-center justify-center gap-2 group"
+                    >
                         <ChartNoAxesColumnIcon />
-                        <span className="text-xl tracking-tight text-foreground">Rank Pilot</span>
+                        <span className="text-xl tracking-tight text-foreground">
+                            Rank Pilot
+                        </span>
                     </Link>
                 </div>
 
-                {/* Form Card */}
+                {/* Card */}
                 <div className="bg-card border border-border rounded-2xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="text-center py-5">
-                            <h1 className="text-2xl text-foreground">Welcome back</h1>
-                            <p className="text-muted-foreground text-sm mt-1">{isLoginState ? "Sign in to your" : "Create an"} Rank Pilot account</p>
+
+                        {/* Heading */}
+                        <div className="text-center mb-6">
+                            <h1 className="text-2xl text-foreground">
+                                Welcome back
+                            </h1>
+
+                            <p className="text-muted-foreground text-sm mt-1">
+                                {isLoginState
+                                    ? "Sign in to your"
+                                    : "Create an"}{" "}
+                                Rank Pilot account
+                            </p>
                         </div>
 
                         {!isLoginState && (
                             <label>
-                                <div className="block text-sm text-foreground mb-1.5">Name</div>
+                                <div className="block text-sm text-foreground mb-1.5">
+                                    Name
+                                </div>
+
                                 <div className="relative">
-                                    <User2Icon size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                    <User2Icon
+                                        size={18}
+                                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                    />
+
                                     <input
                                         type="text"
                                         required
@@ -70,10 +108,18 @@ export default function Login({ state }: { state: string }) {
                                 </div>
                             </label>
                         )}
+
                         <label>
-                            <div className="block text-sm text-foreground mb-1.5 mt-4">Email</div>
+                            <div className="block text-sm text-foreground mb-1.5">
+                                Email
+                            </div>
+
                             <div className="relative">
-                                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <Mail
+                                    size={18}
+                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                />
+
                                 <input
                                     type="email"
                                     required
@@ -86,9 +132,16 @@ export default function Login({ state }: { state: string }) {
                         </label>
 
                         <label>
-                            <div className="block text-sm text-foreground mb-1.5 mt-4">Password</div>
+                            <div className="block text-sm text-foreground mb-1.5">
+                                Password
+                            </div>
+
                             <div className="relative">
-                                <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <Lock
+                                    size={18}
+                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                />
+
                                 <input
                                     type="password"
                                     required
@@ -100,24 +153,49 @@ export default function Login({ state }: { state: string }) {
                             </div>
                         </label>
 
+                        {isLoginState && (
+                            <div className="flex justify-end mt-2 mb-4">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-sm text-primary hover:underline font-medium"
+                                >
+                                    Forgot Password?
+                                </Link>
+                            </div>
+                        )}
+
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 mt-5 rounded-lg bg-primary text-sm text-primary-foreground flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                            className={`w-full ${!isLoginState ? "mt-5" : ""
+                                } py-3 rounded-lg bg-primary text-sm text-primary-foreground flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50`}
                             id="login-submit-btn"
                             style={{ color: "var(--background)" }}
                         >
-                            {loading ? <Loader2 size={18} className="animate-spin" /> : isLoginState ? "Sign In" : "Create Account"}
+                            {loading ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : isLoginState ? (
+                                "Sign In"
+                            ) : (
+                                "Create Account"
+                            )}
                         </button>
                     </form>
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground mt-6">
-                    {isLoginState ? "Don't have an account?" : "Already have an account?"}
-                    <button onClick={() => setIsLoginState((prev) => !prev)} className="text-primary hover:underline font-medium pl-1">
+                    {isLoginState
+                        ? "Don't have an account?"
+                        : "Already have an account?"}
+
+                    <button
+                        onClick={() => setIsLoginState((prev) => !prev)}
+                        className="text-primary hover:underline font-medium pl-1"
+                    >
                         {isLoginState ? "Sign up" : "Sign in"}
                     </button>
                 </p>
+
             </div>
         </div>
     );
