@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // These patterns are intentional for route-state resets and context bootstrap effects.
+      'react-hooks/set-state-in-effect': 'off',
+      // AppContext exports both its provider and its consumer hook.
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

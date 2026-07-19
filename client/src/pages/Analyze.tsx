@@ -13,7 +13,7 @@ const STEPS = [
 ];
 
 export default function Analyze() {
-    const {api} = useApp();
+    const {api, refreshUser} = useApp();
     const [url, setUrl] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
@@ -68,6 +68,7 @@ export default function Analyze() {
                     if (analysis.status === "completed") {
                         if (pollRef.current) clearInterval(pollRef.current);
                         setCurrentStep(3);
+                        await refreshUser();
                         setTimeout(() => navigate(`/report/${id}`), 1000);
                     } else if (analysis.status === "failed") {
                         if (pollRef.current) clearInterval(pollRef.current);

@@ -1,8 +1,16 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+    },
+});
 
-const FROM_EMAIL = "RankPilot <onboarding@resend.dev>";
+const FROM_EMAIL = `RankPilot <${process.env.GMAIL_USER}>`;
 
 const baseStyles = `
     body { margin: 0; padding: 0; background-color: #09090b; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -29,7 +37,7 @@ export async function sendVerificationEmail(to, name, token) {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     try {
-        await resend.emails.send({
+        await transporter.sendMail({
             from: FROM_EMAIL,
             to,
             subject: "Verify your email — RankPilot",
@@ -72,7 +80,7 @@ export async function sendPasswordResetEmail(to, name, token) {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     try {
-        await resend.emails.send({
+        await transporter.sendMail({
             from: FROM_EMAIL,
             to,
             subject: "Reset your password — RankPilot",

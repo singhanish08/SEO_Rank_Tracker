@@ -29,7 +29,7 @@ export default function App() {
         <>
             <Toaster />
             {!hideNavbar && <Navbar />}
-            <div className={!hideNavbar ? "pt-16 md:pt-24" : ""}>
+            <div className={!hideNavbar && location.pathname !== "/" ? "pt-16 md:pt-24" : ""}>
                 <VerificationBanner />
                 <Routes>
                 <Route path="/" element={<Home />} />

@@ -13,9 +13,16 @@ const sensitiveLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { success: false, message: "Too many authentication attempts. Please try again later." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-authRouter.post('/register', register);
-authRouter.post('/login', login);
+authRouter.post('/register', loginLimiter, register);
+authRouter.post('/login', loginLimiter, login);
 authRouter.get('/user', auth, getUser);
 authRouter.get('/verify-email', verifyEmail);
 authRouter.post('/resend-verification', auth, sensitiveLimiter, resendVerification);

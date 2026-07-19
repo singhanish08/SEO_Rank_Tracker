@@ -19,6 +19,7 @@ interface AppContextType {
     login: (email: string, password: string) => Promise<{ success: boolean; message?: string; emailVerified?: boolean }>;
     register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string; emailVerified?: boolean }>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
     verifyEmail: (token: string) => Promise<{ success: boolean; message: string }>;
     resendVerification: () => Promise<{ success: boolean; message: string }>;
     forgotPassword: (email: string) => Promise<{ success: boolean; message: string }>;
@@ -26,28 +27,22 @@ interface AppContextType {
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const api = axios.create({ baseURL: BACKEND_URL });
+
+api.interceptors.request.use((config) => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) config.headers.Authorization = `Bearer ${storedToken}`;
+    return config;
+});
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+const getApiError = (error: unknown, fallback: string) => axios.isAxiosError(error) ? error.response?.data?.message || fallback : fallback;
 
 export function AppProvider({ children }: { children: ReactNode }){
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
     const [loading, setLoading] = useState(true);
-    //Axios instance with auth header
-    const api = axios.create({
-        baseURL: BACKEND_URL,
-    });
-
-    //Update axios headers when token changes
-    api.interceptors.request.use(config => {
-        const token = localStorage.getItem("token");
-        if(token){
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    });
-
-    const loadUser = async () => {
+    const refreshUser = async () => {
         if(!token){
             setLoading(false);
             return;
@@ -57,7 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }){
             if(data.success){
                 setUser(data.user);
             }
-        } catch (error) {
+        } catch {
             localStorage.removeItem("token");
             setToken(null);
             setUser(null);
@@ -66,7 +61,7 @@ export function AppProvider({ children }: { children: ReactNode }){
     }
 
     useEffect(() => {
-        loadUser();
+        refreshUser();
     }, []);
 
     const updateAuthState = (res: { data: { success: boolean; token: string; user: User } }) => {
@@ -87,8 +82,8 @@ export function AppProvider({ children }: { children: ReactNode }){
                 return { ...result, message: undefined };
             }
             return { success: false as const, message: res.data.message };
-        } catch (error: any) {
-            return { success: false as const, message: error.response?.data?.message || "Login failed" };
+        } catch (error: unknown) {
+            return { success: false as const, message: getApiError(error, "Login failed") };
         }
     }
 
@@ -100,8 +95,8 @@ export function AppProvider({ children }: { children: ReactNode }){
                 return { ...result, message: undefined };
             }
             return { success: false as const, message: res.data.message };
-        } catch (error: any) {
-            return { success: false as const, message: error.response?.data?.message || "Registration failed" };
+        } catch (error: unknown) {
+            return { success: false as const, message: getApiError(error, "Registration failed") };
         }
     }
 
@@ -118,8 +113,8 @@ export function AppProvider({ children }: { children: ReactNode }){
                 setUser((prev) => (prev ? { ...prev, emailVerified: true } : prev));
             }
             return { success: data.success, message: data.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || "Verification failed" };
+        } catch (error: unknown) {
+            return { success: false, message: getApiError(error, "Verification failed") };
         }
     };
 
@@ -127,8 +122,8 @@ export function AppProvider({ children }: { children: ReactNode }){
         try {
             const { data } = await api.post("/api/auth/resend-verification");
             return { success: data.success, message: data.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || "Failed to resend verification" };
+        } catch (error: unknown) {
+            return { success: false, message: getApiError(error, "Failed to resend verification") };
         }
     };
 
@@ -136,8 +131,8 @@ export function AppProvider({ children }: { children: ReactNode }){
         try {
             const { data } = await axios.post(`${BACKEND_URL}/api/auth/forgot-password`, { email });
             return { success: data.success, message: data.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || "Failed to send reset email" };
+        } catch (error: unknown) {
+            return { success: false, message: getApiError(error, "Failed to send reset email") };
         }
     };
 
@@ -145,12 +140,12 @@ export function AppProvider({ children }: { children: ReactNode }){
         try {
             const { data } = await axios.post(`${BACKEND_URL}/api/auth/reset-password`, { token, password });
             return { success: data.success, message: data.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || "Password reset failed" };
+        } catch (error: unknown) {
+            return { success: false, message: getApiError(error, "Password reset failed") };
         }
     };
 
-    const value = {user, token, loading, api, login, register, logout, verifyEmail, resendVerification, forgotPassword, resetPassword};
+    const value = {user, token, loading, api, login, register, logout, refreshUser, verifyEmail, resendVerification, forgotPassword, resetPassword};
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

@@ -16,7 +16,7 @@ export async function rankTracker(keyword, targetDomain) {
         page.setDefaultNavigationTimeout(45000);
 
         // 2. Initial Google Visit & Consent Handling
-        await page.goto("https://www.google.com", { waitUntil: "networkidle" });
+        await page.goto("https://www.google.com", { waitUntil: "domcontentloaded", timeout: 30000 });
         try {
             const btn = await page.$('button[id="L2AGLb"], form[action*="consent"] button');
             if (btn) {
@@ -28,11 +28,19 @@ export async function rankTracker(keyword, targetDomain) {
         let found = null,
             allResults = [];
 
-        const cleanTarget = targetDomain.replace("www.", "").toLowerCase();
+        const cleanDomain = (domain) => domain.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+        const cleanTarget = cleanDomain(targetDomain);
+        const isTargetDomain = (domain) => {
+            const candidate = cleanDomain(domain);
+            return candidate === cleanTarget || candidate.endsWith(`.${cleanTarget}`);
+        };
 
         // 3. Search Loop: Iterate through up to 5 pages of Google results
         for (let gPage = 0; gPage < 5; gPage++) {
-            await page.goto(`https://www.google.com/search?q=${encodeURIComponent(keyword)}&start=${gPage * 10}&num=10&hl=en&gl=us`, { waitUntil: "networkidle" });
+            await page.goto(`https://www.google.com/search?q=${encodeURIComponent(keyword)}&start=${gPage * 10}&num=10&hl=en&gl=us&filter=0`, {
+                waitUntil: "domcontentloaded",
+                timeout: 30000,
+            });
 
             // 4. Page Extraction: Retry up to 3 times if results are missing
             let pageResults = [];
@@ -61,7 +69,7 @@ export async function rankTracker(keyword, targetDomain) {
                                 if (!a || !a.href.startsWith("http") || a.href.includes("google.")) return null;
                                 let s = "",
                                     c = a.parentElement;
-                                for (let j = 0; j < 6 && j++; c = c.parentElement) {
+                                for (let j = 0; j < 6 && c; j++, c = c.parentElement) {
                                     const txt = c.innerText || "";
                                     if (txt.length > h3.innerText.length + 50) {
                                         s = (txt.split("\n").find((l) => l.length > 30 && !l.includes(h3.innerText.substring(0, 20))) || "").trim().substring(0, 300);
@@ -73,10 +81,10 @@ export async function rankTracker(keyword, targetDomain) {
                             .filter(Boolean)
                     );
                     if (pageResults.length > 0) break;
-                    await page.reload({ waitUntil: "networkidle" });
+                    await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
                 } catch (err) {
                     if (retry === 2) break;
-                    await page.reload({ waitUntil: "networkidle" });
+                    await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
                 }
             }
             if (!pageResults.length) break;
@@ -85,7 +93,7 @@ export async function rankTracker(keyword, targetDomain) {
             for (const r of pageResults) {
                 r.position = allResults.length + 1;
                 allResults.push(r);
-                if (!found && (r.domain.toLowerCase().includes(cleanTarget) || cleanTarget.includes(r.domain.toLowerCase()))) {
+                if (!found && isTargetDomain(r.domain)) {
                     found = { ...r, page: gPage + 1 };
                 }
             }
@@ -95,7 +103,7 @@ export async function rankTracker(keyword, targetDomain) {
 
         // 6. Finalization: Close browser and extract competitors
         await browser.close();
-        const competitors = allResults.filter((r) => !r.domain.toLowerCase().includes(cleanTarget) && !cleanTarget.includes(r.domain.toLowerCase())).slice(0, 10);
+        const competitors = allResults.filter((r) => !isTargetDomain(r.domain)).slice(0, 10);
 
         return {
             success: true,
