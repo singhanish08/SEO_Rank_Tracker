@@ -39,7 +39,7 @@ export default function VerifyEmail() {
                 <div className="text-center mb-8">
                     <Link to="/" className="flex items-center justify-center gap-2 group mb-10">
                         <ChartNoAxesColumnIcon />
-                        <span className="text-xl tracking-tight text-foreground">Rank Pilot</span>
+                        <span className="text-xl tracking-tight text-foreground">RankPilot</span>
                     </Link>
                 </div>
 

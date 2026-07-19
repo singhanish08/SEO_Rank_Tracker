@@ -17,14 +17,18 @@ export const register = async (req, res) => {
             return res.status(400).json({success: false, message: "All fields are required"});
         }
         // Check if user already exists
-        const existingUser = await User.findOne({email});
+        if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+            return res.status(400).json({success: false, message: "Password must be at least 8 characters and include uppercase, lowercase, and a number"});
+        }
+        const normalizedEmail = email.trim().toLowerCase();
+        const existingUser = await User.findOne({email: normalizedEmail});
         if(existingUser){
             return res.status(400).json({success: false, message: "User already exists"});
         }
         // Hash password
         const hashedPassword = await bcrypt.hash(password, await bcrypt.genSalt(10));
         // Create user
-        const user = await User.create({name, email, password: hashedPassword});
+        const user = await User.create({name: name.trim(), email: normalizedEmail, password: hashedPassword});
 
         // Generate verification token (SHA-256 hash stored, raw token sent via email)
         const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -54,7 +58,7 @@ export const login = async (req, res) => {
             return res.status(400).json({success: false, message: "Email and password are required"});
         }
         // Find user
-        const user = await User.findOne({email});
+        const user = await User.findOne({email: email.trim().toLowerCase()});
         if(!user){
             return res.status(400).json({success: false, message: "Invalid credentials"});
         }

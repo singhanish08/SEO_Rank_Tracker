@@ -62,7 +62,7 @@ export default function Login({ state }: { state: string }) {
                     >
                         <ChartNoAxesColumnIcon />
                         <span className="text-xl tracking-tight text-foreground">
-                            Rank Pilot
+                            RankPilot
                         </span>
                     </Link>
                 </div>
@@ -81,7 +81,7 @@ export default function Login({ state }: { state: string }) {
                                 {isLoginState
                                     ? "Sign in to your"
                                     : "Create an"}{" "}
-                                Rank Pilot account
+                                RankPilot account
                             </p>
                         </div>
 

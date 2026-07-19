@@ -23,6 +23,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [url, setUrl] = useState("");
     const [analyses, setAnalyses] = useState<AnalysisSummary[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     const fetchRecent = async () => {
@@ -30,6 +31,7 @@ export default function Dashboard() {
             const res = await api.get("/api/analysis/list?limit=6");
             if (res.data.success) {
                 setAnalyses(res.data.analyses);
+                setTotalCount(res.data.totalCount ?? res.data.analyses.length);
             }
         } catch (err) {
             console.error("Failed to fetch analyses:", err);
@@ -90,7 +92,7 @@ export default function Dashboard() {
                             <GlobeIcon size={22} />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-foreground">{analyses.length}</p>
+                            <p className="text-2xl font-bold text-foreground">{totalCount}</p>
                             <p className="text-xs text-muted-foreground">Total Scans</p>
                         </div>
                     </div>
