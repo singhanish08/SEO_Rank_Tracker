@@ -6,6 +6,8 @@ import {
     Loader2,
     ChartNoAxesColumnIcon,
     User2Icon,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import toast from "react-hot-toast";
@@ -15,6 +17,7 @@ export default function Login({ state }: { state: string }) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const { login, register } = useApp();
@@ -62,7 +65,7 @@ export default function Login({ state }: { state: string }) {
                     >
                         <ChartNoAxesColumnIcon />
                         <span className="text-xl tracking-tight text-foreground">
-                            Rank Pilot
+                            RankPilot
                         </span>
                     </Link>
                 </div>
@@ -81,7 +84,7 @@ export default function Login({ state }: { state: string }) {
                                 {isLoginState
                                     ? "Sign in to your"
                                     : "Create an"}{" "}
-                                Rank Pilot account
+                                RankPilot account
                             </p>
                         </div>
 
@@ -143,13 +146,20 @@ export default function Login({ state }: { state: string }) {
                                 />
 
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full pl-11 pr-4 py-3 rounded-lg bg-muted/60 border border-border text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 transition-colors text-sm"
+                                    className="w-full pl-11 pr-11 py-3 rounded-lg bg-muted/60 border border-border text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 transition-colors text-sm"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
                         </label>
 

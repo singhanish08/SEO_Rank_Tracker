@@ -36,7 +36,7 @@ export default function ForgotPassword() {
                         >
                             <ChartNoAxesColumnIcon />
                             <span className="text-xl tracking-tight text-foreground">
-                                Rank Pilot
+                                RankPilot
                             </span>
                         </Link>
                     </div>
@@ -84,7 +84,7 @@ export default function ForgotPassword() {
                     >
                         <ChartNoAxesColumnIcon />
                         <span className="text-xl tracking-tight text-foreground">
-                            Rank Pilot
+                            RankPilot
                         </span>
                     </Link>
                 </div>

@@ -1,14 +1,14 @@
-# Contributing to SEO Rank Tracker
+# Contributing to RankPilot
 
-First off, thank you for considering contributing to SEO Rank Tracker! It's people like you that make SEO Rank Tracker such a great tool.
+Thank you for considering contributing to RankPilot.
 
 ## Where do I go from here?
 
-If you've noticed a bug or have a feature request, make sure to check our [Issues](https://github.com/GreatStackDev/seo-rank-tracker/issues) page to see if someone else has already created a ticket. If not, go ahead and [make one](https://github.com/GreatStackDev/seo-rank-tracker/issues/new)!
+If you find a bug or have a feature request, check the repository's Issues page before opening a new ticket.
 
 ## Fork & create a branch
 
-If this is something you think you can fix, then fork SEO Rank Tracker and create a branch with a descriptive name.
+Fork RankPilot and create a branch with a descriptive name.
 
 A good branch name would be (where issue #325 is the ticket you're working on):
 

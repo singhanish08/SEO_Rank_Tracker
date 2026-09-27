@@ -65,23 +65,10 @@ export default function RankTracker() {
                 setNewKeyword("");
                 setNewUrl("");
                 setShowAddModal(false);
-
-                // Poll for completion
-                const id = res.data.tracking._id;
-                const pollInterval = setInterval(async () => {
-                    try {
-                        const check = await api.get(`/api/rank/${id}`);
-                        if (check.data.tracking.status !== "checking") {
-                            clearInterval(pollInterval);
-                            setKeywords((prev) => prev.map((k) => (k._id === id ? check.data.tracking : k)));
-                        }
-                    } catch (error: any) {
-                        console.error(error);
-                    }
-                }, 3000);
             }
         } catch (err: any) {
             setAddError(err.response?.data?.message || "Failed to add keyword");
+            await fetchKeywords();
         }
         setAdding(false);
     };
@@ -89,25 +76,14 @@ export default function RankTracker() {
     const handleRefresh = async (id: string) => {
         setRefreshing(id);
         try {
-            await api.post(`/api/rank/${id}/refresh`);
-            // Update status to checking
             setKeywords((prev) => prev.map((k) => (k._id === id ? { ...k, status: "checking" } : k)));
-
-            // Poll for completion
-            const pollInterval = setInterval(async () => {
-                try {
-                    const check = await api.get(`/api/rank/${id}`);
-                    if (check.data.tracking.status !== "checking") {
-                        clearInterval(pollInterval);
-                        setKeywords((prev) => prev.map((k) => (k._id === id ? check.data.tracking : k)));
-                        setRefreshing(null);
-                    }
-                } catch (error: any) {
-                    console.error(error);
-                }
-            }, 3000);
-        } catch (err) {
+            const res = await api.post(`/api/rank/${id}/refresh`);
+            setKeywords((prev) => prev.map((k) => (k._id === id ? res.data.tracking : k)));
+        } catch (err: any) {
             console.error("Refresh failed:", err);
+            setAddError(err.response?.data?.message || "Rank refresh failed");
+            await fetchKeywords();
+        } finally {
             setRefreshing(null);
         }
     };
@@ -244,7 +220,7 @@ export default function RankTracker() {
                     <div className="flex items-center justify-center py-30">
                         <div className="size-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                ) : processedData.length === 0 ? (
+                ) : keywords.length === 0 ? (
                     <div className="glass rounded-2xl p-12 text-center">
                         <Target size={48} className="mx-auto text-muted-foreground mb-4 opacity-50" />
                         <h3 className="text-lg font-semibold text-foreground mb-2">No keywords tracked yet</h3>
@@ -252,6 +228,12 @@ export default function RankTracker() {
                         <button onClick={() => setShowAddModal(true)} className="bg-primary px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity" style={{ color: "var(--background)" }}>
                             Track Your First Keyword
                         </button>
+                    </div>
+                ) : processedData.length === 0 ? (
+                    <div className="glass rounded-2xl p-12 text-center">
+                        <Target size={48} className="mx-auto text-muted-foreground mb-4 opacity-50" />
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No keywords match your search</h3>
+                        <p className="text-sm text-muted-foreground mb-6">Try adjusting your search or filters.</p>
                     </div>
                 ) : (
                     <div className="space-y-3" style={{ animationDelay: "200ms" }}>

@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/emailService.js";
+import { waitUntil } from "@vercel/functions";
 
 //Generate JWT Token
 const generateToken = (id) => {
@@ -17,14 +18,18 @@ export const register = async (req, res) => {
             return res.status(400).json({success: false, message: "All fields are required"});
         }
         // Check if user already exists
-        const existingUser = await User.findOne({email});
+        if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+            return res.status(400).json({success: false, message: "Password must be at least 8 characters and include uppercase, lowercase, and a number"});
+        }
+        const normalizedEmail = email.trim().toLowerCase();
+        const existingUser = await User.findOne({email: normalizedEmail});
         if(existingUser){
             return res.status(400).json({success: false, message: "User already exists"});
         }
         // Hash password
         const hashedPassword = await bcrypt.hash(password, await bcrypt.genSalt(10));
         // Create user
-        const user = await User.create({name, email, password: hashedPassword});
+        const user = await User.create({name: name.trim(), email: normalizedEmail, password: hashedPassword});
 
         // Generate verification token (SHA-256 hash stored, raw token sent via email)
         const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -34,7 +39,10 @@ export const register = async (req, res) => {
         await user.save();
 
         // Send verification email (fire-and-forget)
-        sendVerificationEmail(user.email, user.name, verificationToken);
+        waitUntil(
+            sendVerificationEmail(user.email, user.name, verificationToken)
+                .catch(err => console.error("Email send failed:", err.message))
+        );
 
         const token = generateToken(user._id);
 
@@ -54,7 +62,7 @@ export const login = async (req, res) => {
             return res.status(400).json({success: false, message: "Email and password are required"});
         }
         // Find user
-        const user = await User.findOne({email});
+        const user = await User.findOne({email: email.trim().toLowerCase()});
         if(!user){
             return res.status(400).json({success: false, message: "Invalid credentials"});
         }
@@ -141,7 +149,10 @@ export const resendVerification = async (req, res) => {
         user.verificationExpires = Date.now() + 30 * 60 * 1000;
         await user.save();
 
-        sendVerificationEmail(user.email, user.name, verificationToken);
+        waitUntil(
+            sendVerificationEmail(user.email, user.name, verificationToken)
+                .catch(err => console.error("Email send failed:", err.message))
+        );
 
         res.json({ success: true, message: "Verification email sent" });
     } catch (error) {
@@ -171,7 +182,10 @@ export const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
         await user.save();
 
-        sendPasswordResetEmail(user.email, user.name, resetToken);
+        waitUntil(
+            sendPasswordResetEmail(user.email, user.name, resetToken)
+                .catch(err => console.error("Email send failed:", err.message))
+        );
 
         res.json({ success: true, message: "If an account exists, a password reset email has been sent" });
     } catch (error) {

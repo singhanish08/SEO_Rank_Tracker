@@ -1,7 +1,7 @@
 {
-  "name": "server",
+  "name": "rankpilot-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "RankPilot API for AI SEO analysis and keyword rank tracking",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@browserbasehq/sdk": "^2.12.0",
     "@google/genai": "^2.8.0",
+    "@vercel/functions": "^3.7.5",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

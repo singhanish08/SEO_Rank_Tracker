@@ -12,6 +12,9 @@ export const addKeyword = async (req, res) => {
         let domain;
         try {
             const urlObj = new URL(url.startsWith('http')? url : `https://${url}`);
+            if (!['http:', 'https:'].includes(urlObj.protocol) || !urlObj.hostname.includes('.')) {
+                return res.status(400).json({success: false, message: 'Enter a valid public website URL'});
+            }
             domain = urlObj.hostname.replace('www.','');
         } catch {
             return res.status(400).json({success: false, message: 'Invalid URL format'});
@@ -32,8 +35,11 @@ export const addKeyword = async (req, res) => {
             domain,
             status: 'checking'
         });
-        res.status(201).json({success: true, message: 'Keyword tracking started', tracking});
-        keywordTracking(tracking)
+        const result = await keywordTracking(tracking);
+        if (!result.success) {
+            return res.status(502).json({ success: false, message: tracking.lastError || "Rank check failed", tracking });
+        }
+        res.status(201).json({success: true, message: 'Keyword tracking completed', tracking});
 
     } catch (error) {
         console.error("Add keyword error:", error.message);
@@ -70,10 +76,18 @@ export const refreshKeyword = async (req, res) => {
     try {
             const tracking = await KeywordTracking.findOne({ _id: req.params.id, userId: req.userId });
             if (!tracking) return res.status(404).json({ success: false, message: "Keyword tracking not found" });
+            const checkIsFresh = tracking.status === "checking" && Date.now() - tracking.updatedAt.getTime() < 10 * 60 * 1000;
+            if (checkIsFresh) {
+                return res.status(409).json({ success: false, message: "A rank check is already in progress" });
+            }
             tracking.status = "checking";
+            tracking.lastError = "";
             await tracking.save();
-            res.json({ success: true, message: "Rank check started" });
-            keywordTracking(tracking);
+            const result = await keywordTracking(tracking);
+            if (!result.success) {
+                return res.status(502).json({ success: false, message: tracking.lastError || "Rank check failed", tracking });
+            }
+            res.json({ success: true, message: "Rank check completed", tracking });
         } catch (error) {
             console.error("Refresh keyword error:", error.message);
             res.status(500).json({ success: false, message: "Server error" });
@@ -83,7 +97,7 @@ export const refreshKeyword = async (req, res) => {
 //Delete keyword tracking
 export const deleteKeyword = async (req,res) => {
     try {
-            const tracking = await KeywordTracking.findByIdAndDelete({ _id: req.params.id, userId: req.userId });
+            const tracking = await KeywordTracking.findOneAndDelete({ _id: req.params.id, userId: req.userId });
             if (!tracking) return res.status(404).json({ success: false, message: "Keyword tracking not found" });
     
             res.json({ success: true, message: "Keyword tracking deleted" });
@@ -108,3 +122,35 @@ export const toggleTracking = async (req,res) => {
             res.status(500).json({ success: false, message: "Server error" });
         }
 }
+
+// Run scheduled checks from Vercel Cron or another trusted scheduler.
+export const runScheduledTracking = async (req, res) => {
+    if (!process.env.CRON_SECRET || req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    try {
+        const trackings = await KeywordTracking.find({ active: true });
+        let completed = 0;
+        let failed = 0;
+
+        for (let index = 0; index < trackings.length; index += 2) {
+            const batch = trackings.slice(index, index + 2);
+            const results = await Promise.allSettled(batch.map(async (tracking) => {
+                tracking.status = "checking";
+                tracking.lastError = "";
+                await tracking.save();
+                return keywordTracking(tracking);
+            }));
+            results.forEach((result) => {
+                if (result.status === "fulfilled" && result.value?.success) completed++;
+                else failed++;
+            });
+        }
+
+        res.json({ success: true, checked: trackings.length, completed, failed });
+    } catch (error) {
+        console.error("Scheduled rank tracking error:", error.message);
+        res.status(500).json({ success: false, message: "Scheduled rank tracking failed" });
+    }
+};
